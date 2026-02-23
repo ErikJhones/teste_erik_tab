@@ -25,7 +25,7 @@ START_TIME=$(date +%s)
 
 # Rodar código Python
 torchrun --standalone --nproc_per_node=1 ./src/tabicl/train/run.py \
-            --wandb_log False \
+            --wandb_log True \
             --wandb_project TabICL \
             --wandb_name Stage1 \
             --wandb_dir ./wandb/ \
@@ -95,7 +95,7 @@ python ./src/tabicl/prior/genload.py \
 
 # Loading from disk and training
 torchrun --standalone --nproc_per_node=1 ./src/tabicl/train/run.py \
-            --wandb_log False \
+            --wandb_log True \
             --wandb_project TabICL \
             --wandb_name Stage1 \
             --wandb_dir ./wandb/ \
