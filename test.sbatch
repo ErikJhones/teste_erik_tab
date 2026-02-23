@@ -1,17 +1,23 @@
-# This script is used to train TabICL for the first stage of the curriculum learning
-
 #!/bin/bash
 
-# Descobre raiz do projeto automaticamente
-PROJECT_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )"/../.. && pwd )"
+#SBATCH --partition=a6000
+#SBATCH --job-name=tabicl_test    # Job name
+#SBATCH --output=job.%x.%j.out # Name of stdout output file (%x expands to job name and %j expands to %jobId)
+#SBATCH --time=04:00:00         # Run time (hh:mm:ss) - 1.5 hours
+#SBATCH --gres=gpu:1            # Number of GPUs to be used
+#SBATCH --qos=gpu-short         # QOS to be used
 
-PYTHON="$PROJECT_ROOT/venv/bin/python"
-TORCHRUN="$PROJECT_ROOT/venv/bin/torchrun"
+echo "==============================="
+echo "Job started"
+echo "JobID: $SLURM_JOB_ID"
+echo "Node: $SLURM_NODELIST"
+echo "Start time: $(date)"
+echo "==============================="
 
-# ----------------------------------
-# Generate prior datasets on the fly
-# ----------------------------------
+# Start timer
+START_TIME=$(date +%s)
 
+# Rodar código Python
 torchrun --standalone --nproc_per_node=1 $PROJECT_ROOT/tabiclv2/src/tabicl/train/run.py \
             --wandb_log True \
             --wandb_project TabICL \
@@ -118,3 +124,23 @@ torchrun --standalone --nproc_per_node=1 $PROJECT_ROOT/tabiclv2/src/tabicl/train
             --checkpoint_dir $PROJECT_ROOT/tabiclv2/checkpoints/stage1 \
             --save_temp_every 50 \
             --save_perm_every 5000
+
+# End timer
+END_TIME=$(date +%s)
+
+ELAPSED=$((END_TIME-START_TIME))
+
+echo "==============================="
+echo "JOB FINISHED"
+echo "==============================="
+
+echo "Elapsed time (seconds): $ELAPSED"
+echo "Elapsed time (minutes): $(($ELAPSED/60))"
+
+echo ""
+echo "===== SLURM RESOURCE USAGE ====="
+
+sacct -j $SLURM_JOB_ID \
+--format=JobID,State,Elapsed,MaxRSS,AllocCPUS
+
+echo "==============================="
