@@ -18,11 +18,11 @@ echo "==============================="
 START_TIME=$(date +%s)
 
 # Rodar código Python
-torchrun --standalone --nproc_per_node=1 $PROJECT_ROOT/tabiclv2/src/tabicl/train/run.py \
+torchrun --standalone --nproc_per_node=1 $PROJECT_ROOT/tabicl/src/tabicl/train/run.py \
             --wandb_log True \
             --wandb_project TabICL \
             --wandb_name Stage1 \
-            --wandb_dir $PROJECT_ROOT/tabiclv2/wandb/ \
+            --wandb_dir $PROJECT_ROOT/tabicl/wandb/ \
             --wandb_mode online \
             --device cuda \
             --dtype float32 \
@@ -57,7 +57,7 @@ torchrun --standalone --nproc_per_node=1 $PROJECT_ROOT/tabiclv2/src/tabicl/train
             --icl_nhead 4 \
             --ff_factor 2 \
             --norm_first True \
-            --checkpoint_dir $PROJECT_ROOT/tabiclv2/checkpoints/stage1 \
+            --checkpoint_dir $PROJECT_ROOT/tabicl/checkpoints/stage1 \
             --save_temp_every 50 \
             --save_perm_every 5000
 
@@ -67,8 +67,8 @@ torchrun --standalone --nproc_per_node=1 $PROJECT_ROOT/tabiclv2/src/tabicl/train
 # ------------------------------------------------------
 
 # Saving to disk
-python $PROJECT_ROOT/tabiclv2/src/tabicl/prior/genload.py \
-    --save_dir $PROJECT_ROOT/tabiclv2/prior/stage1 \
+python $PROJECT_ROOT/tabicl/src/tabicl/prior/genload.py \
+    --save_dir $PROJECT_ROOT/tabicl/prior/stage1 \
     --np_seed 42 \
     --torch_seed 42 \
     --num_batches 100000 \
@@ -88,11 +88,11 @@ python $PROJECT_ROOT/tabiclv2/src/tabicl/prior/genload.py \
     --device cuda
 
 # Loading from disk and training
-torchrun --standalone --nproc_per_node=1 $PROJECT_ROOT/tabiclv2/src/tabicl/train/run.py \
+torchrun --standalone --nproc_per_node=1 $PROJECT_ROOT/tabicl/src/tabicl/train/run.py \
             --wandb_log True \
             --wandb_project TabICL \
             --wandb_name Stage1 \
-            --wandb_dir $PROJECT_ROOT/tabiclv2/wandb/ \
+            --wandb_dir $PROJECT_ROOT/tabicl/wandb/ \
             --wandb_mode online \
             --device cuda \
             --dtype float32 \
@@ -105,7 +105,7 @@ torchrun --standalone --nproc_per_node=1 $PROJECT_ROOT/tabiclv2/src/tabicl/train
             --scheduler cosine_warmup \
             --warmup_proportion 0.02 \
             --gradient_clipping 1.0 \
-            --prior_dir $PROJECT_ROOT/tabiclv2/prior/stage1 \
+            --prior_dir $PROJECT_ROOT/tabicl/prior/stage1 \
             --load_prior_start 0 \
             --delete_after_load False \
             --prior_device cuda \
@@ -121,7 +121,7 @@ torchrun --standalone --nproc_per_node=1 $PROJECT_ROOT/tabiclv2/src/tabicl/train
             --icl_nhead 4 \
             --ff_factor 2 \
             --norm_first True \
-            --checkpoint_dir $PROJECT_ROOT/tabiclv2/checkpoints/stage1 \
+            --checkpoint_dir $PROJECT_ROOT/tabicl/checkpoints/stage1 \
             --save_temp_every 50 \
             --save_perm_every 5000
 
