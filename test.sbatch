@@ -3,9 +3,9 @@
 #SBATCH --partition=a6000
 #SBATCH --job-name=tabicl_test    # Job name
 #SBATCH --output=job.%x.%j.out # Name of stdout output file (%x expands to job name and %j expands to %jobId)
-#SBATCH --time=04:00:00         # Run time (hh:mm:ss) - 1.5 hours
-#SBATCH --gres=gpu:1            # Number of GPUs to be used
-#SBATCH --qos=gpu-short         # QOS to be used
+#SBATCH --time=2-00:00:00         # Run time (hh:mm:ss) - 1.5 hours
+#SBATCH --gres=gpu:4            # Number of GPUs to be used
+#SBATCH --qos=gpu-medium         # QOS to be used
 
 echo "==============================="
 echo "Job started"
@@ -24,7 +24,7 @@ TORCHRUN="$PROJECT_ROOT/venv/bin/torchrun"
 START_TIME=$(date +%s)
 
 # Rodar código Python
-torchrun --standalone --nproc_per_node=1 ./src/tabicl/train/run.py \
+torchrun --standalone --nproc_per_node=4 ./src/tabicl/train/run.py \
             --wandb_log True \
             --wandb_project TabICL \
             --wandb_name Stage1 \
@@ -64,7 +64,7 @@ torchrun --standalone --nproc_per_node=1 ./src/tabicl/train/run.py \
             --ff_factor 2 \
             --norm_first True \
             --checkpoint_dir ./checkpoints/stage1 \
-            --save_temp_every 50 \
+            --save_temp_every 5 \
             --save_perm_every 5000
 
 
@@ -94,7 +94,7 @@ python ./src/tabicl/prior/genload.py \
     --device cuda
 
 # Loading from disk and training
-torchrun --standalone --nproc_per_node=1 ./src/tabicl/train/run.py \
+torchrun --standalone --nproc_per_node=4 ./src/tabicl/train/run.py \
             --wandb_log True \
             --wandb_project TabICL \
             --wandb_name Stage1 \
@@ -128,7 +128,7 @@ torchrun --standalone --nproc_per_node=1 ./src/tabicl/train/run.py \
             --ff_factor 2 \
             --norm_first True \
             --checkpoint_dir ./checkpoints/stage1 \
-            --save_temp_every 50 \
+            --save_temp_every 5 \
             --save_perm_every 5000
 
 # End timer
