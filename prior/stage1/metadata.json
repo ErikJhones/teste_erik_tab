@@ -1,0 +1,15 @@
+{
+  "prior_type": "mix_scm",
+  "batch_size": 512,
+  "batch_size_per_gp": 4,
+  "min_seq_len": 2,
+  "max_seq_len": 1024,
+  "log_seq_len": false,
+  "seq_len_per_gp": false,
+  "min_features": 2,
+  "max_features": 100,
+  "max_classes": 10,
+  "min_train_size": 0.2,
+  "max_train_size": 0.9,
+  "replay_small": false
+}
