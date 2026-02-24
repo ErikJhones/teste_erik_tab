@@ -1,11 +1,11 @@
 #!/bin/bash
 
-#SBATCH --partition=h100
+#SBATCH --partition=a6000
 #SBATCH --job-name=tabicl_test    # Job name
 #SBATCH --output=job.%x.%j.out # Name of stdout output file (%x expands to job name and %j expands to %jobId)
 #SBATCH --time=2-00:00:00         # Run time (hh:mm:ss) - 1.5 hours
 #SBATCH --gres=gpu:1            # Number of GPUs to be used
-#SBATCH --qos=gpu-h100         # QOS to be used
+#SBATCH --qos=gpu-medium         # QOS to be used
 
 echo "==============================="
 echo "Job started"
@@ -42,7 +42,7 @@ torchrun --standalone --nproc_per_node=1 ./src/tabicl/train/run.py \
             --warmup_proportion 0.02 \
             --gradient_clipping 1.0 \
             --prior_type mix_scm \
-            --prior_device cuda \
+            --prior_device cpu \
             --batch_size_per_gp 4 \
             --min_features 2 \
             --max_features 100 \
@@ -91,7 +91,7 @@ python ./src/tabicl/prior/genload.py \
     --max_train_size 0.9 \
     --n_jobs -1 \
     --num_threads_per_generate 1 \
-    --device cuda
+    --device cpu
 
 # Loading from disk and training
 torchrun --standalone --nproc_per_node=1 ./src/tabicl/train/run.py \
@@ -114,7 +114,7 @@ torchrun --standalone --nproc_per_node=1 ./src/tabicl/train/run.py \
             --prior_dir ./prior/stage1 \
             --load_prior_start 0 \
             --delete_after_load False \
-            --prior_device cuda \
+            --prior_device cpu \
             --embed_dim 128 \
             --col_num_blocks 3 \
             --col_nhead 4 \
