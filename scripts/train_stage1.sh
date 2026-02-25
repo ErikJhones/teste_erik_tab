@@ -65,7 +65,7 @@ python $PROJECT_ROOT/tabiclv2/src/tabicl/prior/genload.py \
     --save_dir $PROJECT_ROOT/tabiclv2/prior/stage1 \
     --np_seed 42 \
     --torch_seed 42 \
-    --num_batches 100000 \
+    --num_batches 10 \
     --resume_from 0 \
     --batch_size 512 \
     --batch_size_per_gp 4 \
