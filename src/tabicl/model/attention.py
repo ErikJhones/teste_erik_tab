@@ -9,6 +9,9 @@ from torch.nn import functional as F
 from .rope import RotaryEmbedding
 from .kv_cache import KVCacheEntry
 
+from adasplash import adasplash
+
+
 try:
     from flash_attn_interface import flash_attn_varlen_func as flash_attn3
 
@@ -284,10 +287,10 @@ def multi_head_attention_forward(
         else:
             attn_mask = attn_mask + key_padding_mask
 
-    attn_output = sdpa_with_flattened_batch(
-        q, k, v, attn_mask, dropout_p, ssmax_layer=ssmax_layer
-    )  # (..., nh, tgt_len, hs)
-
+    # attn_output = sdpa_with_flattened_batch(
+    #     q, k, v, attn_mask, dropout_p, ssmax_layer=ssmax_layer
+    # )  # (..., nh, tgt_len, hs)
+    attn_output = adasplash(q, k, v, alpha=1.5)
     # Reshape and project output
     attn_output = attn_output.transpose(-3, -2).contiguous().view(*batch_shape, tgt_len, embed_dim)
     attn_output = F.linear(attn_output, out_proj_weight, out_proj_bias)  # (batch_shape, tgt_len, E)
