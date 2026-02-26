@@ -3,7 +3,7 @@
 #SBATCH --partition=h100
 #SBATCH --job-name=tabicl_adasplash    # Job name
 #SBATCH --output=job.%x.%j.out # Name of stdout output file (%x expands to job name and %j expands to %jobId)
-#SBATCH --time=01:00:00         # Run time (hh:mm:ss) - 1.5 hours
+#SBATCH --time=04:00:00         # Run time (hh:mm:ss) - 1.5 hours
 #SBATCH --gres=gpu:1            # Number of GPUs to be used
 #SBATCH --qos=gpu-h100         # QOS to be used
 #SBATCH --cpus-per-task=8
