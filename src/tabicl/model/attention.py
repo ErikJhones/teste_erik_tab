@@ -8,10 +8,7 @@ from torch.nn import functional as F
 
 from .rope import RotaryEmbedding
 from .kv_cache import KVCacheEntry
-
 from adasplash import adasplash
-
-
 try:
     from flash_attn_interface import flash_attn_varlen_func as flash_attn3
 
@@ -38,6 +35,60 @@ def flash_attn3_toggle(enabled: bool):
     finally:
         _use_flash_attn3 = old
 
+def adasplash_attention(q, k, v):
+    # --- INÍCIO DA INTEGRAÇÃO ADASPLASH COM VARLEN (CORRIGIDO) ---
+
+    # 1. Dimensões originais
+    S_q = q.size(-2)
+    S_k = k.size(-2)
+    D = q.size(-1)
+    H = num_heads
+    q_orig_shape = q.shape
+
+    # 2. Criar o tensor varlen (cu_seqlens)
+    # Calculamos o número total de sequências no batch
+    # q.view(-1, H, S_q, D) nos dá o batch achatado
+    num_sequences = q.view(-1, H, S_q, D).size(0)
+
+    # O varlen precisa mapear os offsets: [0, S_q, 2*S_q, ..., num_sequences*S_q]
+    # Ele DEVE ser int32 e estar na mesma GPU
+    varlen = torch.arange(
+        0,
+        (num_sequences + 1) * S_q,
+        S_q,
+        device=q.device,
+        dtype=torch.int32
+    )
+
+    # 3. Formatar para o Kernel (B=1, H, Total_S, D)
+    # O AdaSplash exige 4 dims. Colocamos todas as sequências juntas na dim -2.
+    q_kernel = q.reshape(1, H, -1, D)
+    k_kernel = k.reshape(1, H, -1, D)
+    v_kernel = v.reshape(1, H, -1, D)
+
+    # 4. Cast de precisão
+    target_dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+    q_kernel = q_kernel.to(target_dtype).contiguous()
+    k_kernel = k_kernel.to(target_dtype).contiguous()
+    v_kernel = v_kernel.to(target_dtype).contiguous()
+
+    # 5. Execução do Kernel
+    # Agora q_kernel.shape será [1, num_heads, total_tokens, head_dim]
+    attn_out_kernel = adasplash(
+        q_kernel,
+        k_kernel,
+        v_kernel,
+        alpha=1.5,
+        varlen=varlen
+    )
+
+    # 6. Reconstruir para o formato original do TabICL
+    # Usamos o shape original salvo no início para desfazer o achatamento
+    attn_output = attn_out_kernel.reshape(q_orig_shape).to(query.dtype)
+
+    # --- FIM DA INTEGRAÇÃO ADASPLASH ---
+
+    return attn_output
 
 def sdpa_with_flattened_batch(
     q: Tensor,
@@ -162,7 +213,7 @@ def multi_head_attention_forward(
 
     out_proj_weight : Tensor
         Output projection weight matrix.
-
+    
     out_proj_bias : Tensor
         Output projection bias vector.
 
@@ -290,10 +341,13 @@ def multi_head_attention_forward(
     # attn_output = sdpa_with_flattened_batch(
     #     q, k, v, attn_mask, dropout_p, ssmax_layer=ssmax_layer
     # )  # (..., nh, tgt_len, hs)
-    attn_output = adasplash(q, k, v, alpha=1.5)
-    # Reshape and project output
+
+    # adasplash
+    attn_output = adasplash_attention(q, k, v)
+
+    # Reshape final e projeção de saída (código original do TabICL)
     attn_output = attn_output.transpose(-3, -2).contiguous().view(*batch_shape, tgt_len, embed_dim)
-    attn_output = F.linear(attn_output, out_proj_weight, out_proj_bias)  # (batch_shape, tgt_len, E)
+    attn_output = F.linear(attn_output, out_proj_weight, out_proj_bias)
 
     if need_kv and cached_kv is None:
         return attn_output, k, v
